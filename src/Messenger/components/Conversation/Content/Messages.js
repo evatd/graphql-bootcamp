@@ -2,12 +2,12 @@ import React from "react";
 import PropTypes from "prop-types";
 import styled, { css } from "styled-components";
 import { withRouter } from "react-router-dom";
-// import { graphql } from 'react-apollo'
-// import gql from 'graphql-tag'
-
+import { graphql, compose } from "react-apollo";
+import gql from "graphql-tag";
+import THREADS_CONNECTION_QUERY from "../../Threads";
 // import MESSAGES_QUERY from './Messages.graphql'
 // import { THREADS_QUERY } from '../../Threads'
-import colours from "../../../../App/styles/export/colours.css";
+// import colours from "../../../../App/styles/export/colours.css";
 import Avatar from "../../../../App/components/Layout/Avatar";
 import Icon from "../../../../App/components/Layout/Icon";
 import Snackbar from "@material-ui/core/Snackbar";
@@ -23,7 +23,7 @@ const MessagesList = styled.div`
   padding: 1em;
   overflow-y: auto;
   p {
-    color: ${colours.darkGrey};
+    color: grey;
     font-size: 0.9em;
   }
 `;
@@ -31,7 +31,7 @@ const MessagesList = styled.div`
 const NewMessage = styled.div`
   min-height: 20px;
   padding: 1em;
-  border-top: 1px solid ${colours.mediumGrey};
+  border-top: 1px solid grey;
   font-size: 0.9rem;
   display: flex;
   justify-content: space-between;
@@ -65,10 +65,8 @@ const Message = styled.div`
   padding: 0.5em 1em;
   display: inline-block;
   font-size: 0.9rem;
-  background: ${props =>
-    props.from === "received" ? colours.lightGrey : colours.lightBlue};
-  color: ${props =>
-    props.from === "received" ? colours.black : colours.white};
+  background: ${props => (props.from === "received" ? "grey" : "blue")};
+  color: ${props => (props.from === "received" ? "black" : "white")};
 `;
 
 class Messages extends React.Component {
@@ -154,18 +152,65 @@ Messages.defaultProps = {
 };
 
 // use the following function to send a message
-// const sendMessage = graphql(gql`
-//     TODO add a mutation here
-// `,
-// {
-//   options: (props) => ({
-//     refetchQueries: // TODO https://www.apollographql.com/docs/react/advanced/caching.html#after-mutations
-//     update: (store, { data: { sendMessage } }) => {
-//       // TODO you need to update a thread and write the Query again in the cache
-//       // Hint https://www.apollographql.com/docs/react/advanced/caching.html#writequery-and-writefragment
-//     }
-//   }),
-//   name: 'sendMessage',
-// })
+const sendMessage = graphql(
+  gql`
+    mutation sendMessage($from: String!, $to: String!, $message: String!) {
+      sendMessage(input: { from: $from, to: $to, message: $message }) {
+        id
+      }
+    }
+  `,
+  {
+    options: props => ({
+      // TODO https://www.apollographql.com/docs/react/advanced/caching.html#after-mutations
+      refetchQueries: [
+        {
+          query: CONVERSATION_QUERY,
+          variables: { username: props.username }
+        }
+      ],
+      update: (store, { data: { sendMessage } }) => {
+        //   // TODO you need to update a thread and write the Query again in the cache
+        //   // Hint https://www.apollographql.com/docs/react/advanced/caching.html#writequery-and-writefragment
+        // Read the data from our cache for this query.
+        const data = store.readQuery({ query: THREADS_CONNECTION_QUERY });
+        // Add our comment from the mutation to the end.
+        data.sendMessage.push(sendMessage);
+        // Write our data back to the cache.
+        store.writeQuery({ query: CONVERSATION_QUERY, data });
+      }
+    }),
+    // if not named, it shows up as "mutate"
+    name: "sendMessage"
+  }
+);
 
-export default withRouter(Messages);
+const CONVERSATION_QUERY = gql`
+  query conversation($username: String!) {
+    conversationConnection(username: $username) {
+      edges {
+        node {
+          from
+          to
+          message
+          time
+        }
+        cursor
+      }
+    }
+  }
+`;
+
+const getMessages = graphql(CONVERSATION_QUERY, {
+  options: props => ({
+    variables: {
+      username: props.username
+    }
+  })
+});
+
+export default compose(
+  withRouter,
+  getMessages,
+  sendMessage
+)(Messages);

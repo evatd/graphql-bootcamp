@@ -1,23 +1,23 @@
-import React from 'react'
-import PropTypes from 'prop-types'
-import styled from 'styled-components'
-import { withRouter } from 'react-router'
-import { graphql } from 'react-apollo'
-import gql from 'graphql-tag'
+import React from "react";
+import PropTypes from "prop-types";
+import styled from "styled-components";
+import { withRouter } from "react-router";
+import { graphql, compose } from "react-apollo";
+import gql from "graphql-tag";
 
-import colours from '../../App/styles/export/colours.css'
-import Avatar from '../../App/components/Layout/Avatar'
-import Icon from '../../App/components/Layout/Icon'
+// import colours from "../../App/styles/export/colours.css";
+import Avatar from "../../App/components/Layout/Avatar";
+import Icon from "../../App/components/Layout/Icon";
 
 const ThreadsWrapper = styled.div`
   display: flex;
-  border-right: 1px solid ${colours.mediumGrey};
+  border-right: 1px solid grey;
   flex-direction: column;
-  flex:1;
-`
+  flex: 1;
+`;
 
 const ThreadBar = styled.div`
-  border-bottom: 1px solid ${colours.mediumGrey};
+  border-bottom: 1px solid grey;
   padding: 0.85em;
   h2 {
     display: flex;
@@ -25,25 +25,24 @@ const ThreadBar = styled.div`
     align-content: center;
     justify-content: space-between;
   }
-`
+`;
 
 const ThreadList = styled.ul`
-    overflow-y: auto;
-    width: 100%;
-    list-style: none inside none;
-    padding: 0;
-    margin: 0;
-    li {
-      display: flex;
-      align-items: center;
-      padding: 0.4em 0.75em;
-      &:hover {
-        background: ${colours.lightGrey};
-        cursor: pointer;
-      }
-
+  overflow-y: auto;
+  width: 100%;
+  list-style: none inside none;
+  padding: 0;
+  margin: 0;
+  li {
+    display: flex;
+    align-items: center;
+    padding: 0.4em 0.75em;
+    &:hover {
+      background: grey;
+      cursor: pointer;
     }
-`
+  }
+`;
 
 const UserName = styled.div`
   font-size: 0.9rem;
@@ -53,24 +52,27 @@ const UserName = styled.div`
   }
   small {
     font-size: 0.8em;
-    color: ${colours.darkGrey};
+    color: grey;
     margin: 2px 0;
     display: block;
   }
-`
+`;
 
 const Threads = ({ history, match, data }) => {
-  let content
+  let content;
   if (data.loading) {
-    content = <p>Loading...</p>
+    content = <p>Loading...</p>;
   } else if (data.error) {
-    content = <p>Oops, there was a problem</p>
+    content = <p>Oops, there was a problem</p>;
   } else {
-    const { threads = [] } = data
-    content = threads.length ? (
+    const { threadsConnection: { edges } = [] } = data;
+    content = edges.length ? (
       <ThreadList>
-        {threads.map(thread => (
-          <li onClick={() => history.push(`${match.url}/${thread.username}`)}>
+        {edges.map(({ node: thread }) => (
+          <li
+            key={thread.username}
+            onClick={() => history.push(`${match.url}/${thread.username}`)}
+          >
             <Avatar username={thread.username} size="large" />
             <UserName>
               <span>{`${thread.firstName} ${thread.lastName}`}</span>
@@ -79,7 +81,9 @@ const Threads = ({ history, match, data }) => {
           </li>
         ))}
       </ThreadList>
-    ) : <p>There are no messages</p>
+    ) : (
+      <p>There are no messages</p>
+    );
   }
 
   return (
@@ -93,40 +97,65 @@ const Threads = ({ history, match, data }) => {
       </ThreadBar>
       {content}
     </ThreadsWrapper>
-  )
-}
-
-
+  );
+};
 
 Threads.propTypes = {
   thread: PropTypes.object,
   history: PropTypes.object.isRequired,
-  match: PropTypes.object.isRequired,
-}
+  match: PropTypes.object.isRequired
+};
 
 Threads.defaultProps = {
   data: {
     loading: true
   }
-}
+};
 
-/* 
-There are two ways you can "connect" to the GraphQL API, Render Props or Higher-Order Components (HoC). 
+/*
+There are two ways you can "connect" to the GraphQL API, Render Props or Higher-Order Components (HoC).
 In this example we are going to use HoC.
 You will need to do 3 things:
 
 1) Create the GraphQL query. We recommend you to first run it in http://localhost:3000/graphiql
 
 2) Transform the query into JavaScript so it can run on the browser. You'll need to use the gql function imported at the top. Example: https://github.com/apollographql/graphql-tag
-E.g. 
+E.g.
 const query = gql`
   someQuery
 `
 
-3) "Connect" the Threads component to GraphQL using the HoC graphql (imported at the top). This Hoc will receive your query and the Threads Component. 
+3) "Connect" the Threads component to GraphQL using the HoC graphql (imported at the top). This Hoc will receive your query and the Threads Component.
 Official documentation https://www.apollographql.com/docs/react/api/react-apollo.html#graphql
 E.g.
 export default graphql(query)(MyCoolComponent)
 */
 
-export default withRouter(Threads)
+// see what you need in the jsx
+// convention to capitalise the names
+export const THREADS_CONNECTION_QUERY = gql`
+  query threadsConnection {
+    threadsConnection {
+      edges {
+        node {
+          username
+          firstName
+          lastName
+          lastMessage {
+            message
+          }
+        }
+      }
+    }
+  }
+`;
+
+// convention, compose WITH might read better
+const withThreads = graphql(THREADS_CONNECTION_QUERY);
+export default compose(
+  withRouter,
+  withThreads
+)(Threads);
+
+// order shouldn't matter in composition, the below is valid too
+// export default compose(graphql(THREADS_CONNECTION_QUERY))(withRouter(Threads));

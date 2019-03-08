@@ -5,11 +5,11 @@ import styled from 'styled-components'
 
 import { toggleMessageDetail } from '../../../App/actions/ui'
 import Icon from '../../../App/components/Layout/Icon'
-import colours from '../../../App/styles/export/colours.css'
+// import colours from '../../../App/styles/export/colours.css'
 
 const ConversationBarWrapper = styled.div`
     position: relative;
-    border-bottom: 1px solid ${colours.mediumGrey};
+    border-bottom: 1px solid grey;
     padding: 1.05em;
     align-items: center;
     h2 {

@@ -6,7 +6,7 @@ import { connect } from 'react-redux'
 import Login from '../../User/components/Login'
 import Messenger from '../../Messenger/components'
 import Profile from '../../User/components/Profile'
-import colours from '../styles/export/colours.css'
+// import colours from '../styles/export/colours.css'
 
 import NotFound from './NotFound'
 import Home from './Home'
@@ -14,7 +14,7 @@ import TopBar from './Layout/TopBar'
 import Footer from './Layout/Footer'
 
 const AppWrapper = styled.div`
-  background-color: ${colours.white};
+  background-color: white;
   overflow: hidden;
   flex: 1;
   flex-flow: row wrap;

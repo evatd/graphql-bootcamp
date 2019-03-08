@@ -7,7 +7,7 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 import { ApolloClient } from "apollo-client";
 
 import { configureStore } from "./App/store";
-import "./App/styles/index.css";
+// import "./App/styles/index.css";
 import Root from "./App/components/Root";
 
 const configLink = {

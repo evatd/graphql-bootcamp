@@ -1,10 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import styled from 'styled-components'
-import colours from '../../styles/export/colours.css'
+// import colours from '../../styles/export/colours.css'
 
 const StyledIcon = styled.i`
-  color: ${props => props.active ? colours.lightBlue : colours.grey};
+  color: ${props => props.active ? "blue" : "grey"};
   font-size: ${props => `${props.size}rem`};
 `
 

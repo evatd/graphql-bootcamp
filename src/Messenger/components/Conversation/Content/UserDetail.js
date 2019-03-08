@@ -3,19 +3,19 @@ import PropTypes from "prop-types";
 import { Query } from "react-apollo";
 import styled from "styled-components";
 
-import colours from "../../../../App/styles/export/colours.css";
+// import colours from "../../../../App/styles/export/colours.css";
 import Avatar from "../../../../App/components/Layout/Avatar";
 import Icon from "../../../../App/components/Layout/Icon";
 import USER_DETAIL_QUERY from "./UserDetail.graphql";
 
 const UserDetailWrapper = styled.div`
     width: 33.3%;
-    border-left: 1px solid ${colours.mediumGrey};
+    border-left: 1px solid grey;
     > div {
     padding: 1em;
     font-size: 0.9em;
-    color: ${colours.darkGrey};
-    border-bottom: 1px solid ${colours.mediumGrey};
+    color: grey;
+    border-bottom: 1px solid grey;
     &:last-child {
       border-bottom: none;
     }
@@ -37,7 +37,7 @@ const UserName = styled.div`
 
 const LastActive = styled.div`
   font-size: 0.75rem;
-  color: ${colours.darkGrey};
+  color: grey;
 `;
 
 const UserBio = styled.p`

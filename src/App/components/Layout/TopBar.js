@@ -5,17 +5,17 @@ import styled, { css } from 'styled-components'
 import { connect } from 'react-redux'
 
 import { logOut } from '../../../User/auth'
-import colours from '../../styles/export/colours.css'
+// import colours from '../../styles/export/colours.css'
 
 const TopBarWrapper = styled.div`
-    background: ${colours.darkBlue};
+    background: blue;
     padding: 1em;
     text-align: center;
     border-bottom: 1px solid #29487d;
-    color: ${colours.white};
+    color: white;
     min-height: 60px;
     .fab {
-      color: ${colours.white};
+      color: white;
       font-size: 1.5em;
     }
 `
