@@ -151,39 +151,95 @@ Messages.defaultProps = {
   }
 };
 
-// use the following function to send a message
-const sendMessage = graphql(
-  gql`
-    mutation sendMessage($from: String!, $to: String!, $message: String!) {
-      sendMessage(input: { from: $from, to: $to, message: $message }) {
-        id
-      }
+// // use the following function to send a message
+// const sendMessage = graphql(
+//   gql`
+//     mutation sendMessage($from: String!, $to: String!, $message: String!) {
+//       sendMessage(input: { from: $from, to: $to, message: $message }) {
+//         id
+//       }
+//     }
+//   `,
+//   {
+//     options: props => ({
+//       // TODO https://www.apollographql.com/docs/react/advanced/caching.html#after-mutations
+//       refetchQueries: [
+//         {
+//           query: CONVERSATION_QUERY,
+//           variables: { username: props.username }
+//         }
+//       ],
+//       update: (store, { data: { sendMessage } }) => {
+//         //   // TODO you need to update a thread and write the Query again in the cache
+//         //   // Hint https://www.apollographql.com/docs/react/advanced/caching.html#writequery-and-writefragment
+//         // Read the data from our cache for this query.
+//         const data = store.readQuery({ query: THREADS_CONNECTION_QUERY });
+//         // Add our comment from the mutation to the end.
+//         data.sendMessage.push(sendMessage);
+//         // Write our data back to the cache.
+//         store.writeQuery({ query: CONVERSATION_QUERY, data });
+//       }
+//     }),
+//     // if not named, it shows up as "mutate"
+//     name: "sendMessage"
+//   }
+// );
+
+// query is executed on ComponentDidMount
+// mutation is triggered when something happens, e.g. user onChange
+// so it won't be executed on first render
+// so graphQL gives you a prop called mutate - or
+// you can name it, e.g. name: "sendMessage" - can be seen in React dev tools
+// mutation will always have varialbes if it has them
+// can be seen in network, request payload. OperationName is what you're requesting, e.g. threadsConnection
+// in network, click on each message thread and see queries. Only runs once, then gets cached - super
+const SEND_MESSAGE_MUTATION = gql`
+  mutation sendMessage($from: String!, $to: String!, $message: String!) {
+    sendMessage(input: { from: $from, to: $to, message: $message }) {
+      id
     }
-  `,
-  {
-    options: props => ({
-      // TODO https://www.apollographql.com/docs/react/advanced/caching.html#after-mutations
-      refetchQueries: [
-        {
-          query: CONVERSATION_QUERY,
-          variables: { username: props.username }
-        }
-      ],
-      update: (store, { data: { sendMessage } }) => {
-        //   // TODO you need to update a thread and write the Query again in the cache
-        //   // Hint https://www.apollographql.com/docs/react/advanced/caching.html#writequery-and-writefragment
-        // Read the data from our cache for this query.
-        const data = store.readQuery({ query: THREADS_CONNECTION_QUERY });
-        // Add our comment from the mutation to the end.
-        data.sendMessage.push(sendMessage);
-        // Write our data back to the cache.
-        store.writeQuery({ query: CONVERSATION_QUERY, data });
-      }
-    }),
-    // if not named, it shows up as "mutate"
-    name: "sendMessage"
   }
-);
+`;
+
+const sendMessage = graphql(SEND_MESSAGE_MUTATION, {
+  options: props => ({
+    // TODO https://www.apollographql.com/docs/react/advanced/caching.html#after-mutations
+    // limitation: you need to tell graphql client that the messages are cached, need to fetch data again
+    // 1 option: refetch query: for this user, just fetch that convo again
+    // as a result you see 2 queries, one that mutates and one that sends query again
+    // but the thread for the second convo isn't fetched - so need to qeury that too
+    // THREADS_CONNECTION_QUERY - but less performant as need to query twice
+    // so we comment this query out and replace it with update
+    refetchQueries: [
+      {
+        query: CONVERSATION_QUERY,
+        variables: { username: props.username }
+      }
+      // {
+      //   query: THREADS_CONNECTION_QUERY,
+      // }
+    ],
+    update: (proxy, { data: { sendMessage } }) => {
+      const query = { query: THREADS_CONNECTION_QUERY };
+
+      // better option:Read the data from our cache for this query.
+      const data = proxy.readQuery(query);
+
+      const edges = data.threadsConnection.edges.map(({ node }) => {
+        if (node.username === sendMessage.to) {
+          node.lastMessage.message = sendMessage.message;
+        }
+        return node;
+      });
+
+      const newData = Object.assign({ threadsConnection: { edges } }, data);
+
+      // Write our data back to the cache.
+      proxy.writeQuery({ ...query, data: newData });
+    }
+  }),
+  name: "sendMessage"
+});
 
 const CONVERSATION_QUERY = gql`
   query conversation($username: String!) {
@@ -200,6 +256,12 @@ const CONVERSATION_QUERY = gql`
     }
   }
 `;
+
+// query, object with variable
+// could also name it withConversation to make it more readable in compose
+// but with var defined like this,
+// if there's no username, the page will error out
+// it works without the variables bit too => const getMessages = graphql(CONVERSATION_QUERY)
 
 const getMessages = graphql(CONVERSATION_QUERY, {
   options: props => ({
